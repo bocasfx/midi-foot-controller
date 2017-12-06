@@ -1,12 +1,13 @@
-/* Simple Teensy DIY USB-MIDI controller.
-  Created by Liam Lacey, based on the Teensy USB-MIDI Buttons example code.
+/* 
 
-   Contains 8 push buttons for sending MIDI messages,
+  Simple Teensy DIY USB-MIDI controller.
+
+  Created by Rodolfo Palacios, based on a script by Liam Lacey 
+  https://ask.audio/articles/how-to-build-a-simple-diy-usb-midi-controller-using-teensy
+
+   Contains 10 push buttons for sending MIDI/Keyboard messages,
    and a toggle switch for setting whether the buttons
-   send note messages or CC messages.
-
-   The toggle switch is connected to input pin 0,
-   and the push buttons are connected to input pins 1 - 8.
+   send note messages, CC messages or keyboard keys.
 
    You must select MIDI from the "Tools > USB Type" menu for this code to compile.
 
@@ -66,7 +67,7 @@ const int MODE_MIDI_CCS = 1;
 const int MODE_KEYBOARD = 2;
 
 //Variable that stores the current MIDI mode of the device (what type of messages the push buttons send).
-int midiMode = MODE_MIDI_NOTES;
+int operationMode = MODE_MIDI_NOTES;
 
 // the MIDI channel number to send messages
 const int MIDI_CHANNEL = 1;
@@ -79,12 +80,9 @@ const int MIDI_CC_VALS[MIDI_BUTTON_COUNT] = {127, 127, 127, 127, 127, 127, 127, 
 
 // TODO: Initialize array for keyboard values.
 
-//==============================================================================
-//==============================================================================
-//==============================================================================
 //The setup function. Called once when the Teensy is turned on or restarted
-
 void setup() {
+
   // Configure the pins for input mode with pullup resistors.
   // The buttons/switch connect from each pin to ground.  When
   // the button is pressed/on, the pin reads LOW because the button
@@ -102,13 +100,9 @@ void setup() {
 
 }
 
-//==============================================================================
-//==============================================================================
-//==============================================================================
 //The loop function. Called over-and-over once the setup function has been called.
-
 void loop() {
-  //==============================================================================
+
   // Update all the buttons/switch. There should not be any long
   // delays in loop(), so this runs repetitively at a rate
   // faster than the buttons could be pressed and released.
@@ -120,49 +114,45 @@ void loop() {
     switches[i].update();
   }
 
-  //==============================================================================
   // Check the status of each push button
-
   for (int i = 0; i < MIDI_BUTTON_COUNT; i++) {
 
-    //========================================
     // Check each button for "falling" edge.
     // Falling = high (not pressed - voltage from pullup resistor) to low (pressed - button connects pin to ground)
-
     if (buttons[i + 1].fallingEdge()) {
+
       //If in note mode send a MIDI note-on message.
       //Else send a CC message.
-      if (midiMode == MODE_MIDI_NOTES) {
-        usbMIDI.sendNoteOn (MIDI_NOTE_NUMS[i], MIDI_NOTE_VELS[i], MIDI_CHANNEL);
+      if (operationMode == MODE_MIDI_NOTES) {
+        usbMIDI.sendNoteOn(MIDI_NOTE_NUMS[i], MIDI_NOTE_VELS[i], MIDI_CHANNEL);
       } else {
-        usbMIDI.sendControlChange (MIDI_CC_NUMS[i], MIDI_CC_VALS[i], MIDI_CHANNEL);
+        usbMIDI.sendControlChange(MIDI_CC_NUMS[i], MIDI_CC_VALS[i], MIDI_CHANNEL);
       }
     }
 
-    //========================================
     // Check each button for "rising" edge
     // Rising = low (pressed - button connects pin to ground) to high (not pressed - voltage from pullup resistor)
-
     else if (buttons[i + 1].risingEdge()) {
+
       //If in note mode send a MIDI note-off message.
       //Else send a CC message with a value of 0.
-      if (midiMode == MODE_MIDI_NOTES)
-        usbMIDI.sendNoteOff (MIDI_NOTE_NUMS[i], 0, MIDI_CHANNEL);
-      else
-        usbMIDI.sendControlChange (MIDI_CC_NUMS[i], 0, MIDI_CHANNEL);
+      if (operationMode == MODE_MIDI_NOTES) {
+        usbMIDI.sendNoteOff MIDI_NOTE_NUMS[i], 0, MIDI_CHANNEL);
+      } else {
+        usbMIDI.sendControlChange(MIDI_CC_NUMS[i], 0, MIDI_CHANNEL);
+      }
     }
-
   }
 
-  //==============================================================================
   // Check the status of the toggle switch, and set the MIDI mode based on this.
   if (switches[0].fallingEdge()) {
-    midiMode = MODE_MIDI_NOTES;
-  } else if (buttons[0].risingEdge()) {
-    midiMode = MODE_MIDI_CCS;
+    operationMode = MODE_MIDI_NOTES;
+  } else if (buttons[1].fallingEdge()) {
+    operationMode = MODE_MIDI_CCS;
+  } else {
+    operationMode = MODE_KEYBOARD;
   }
 
-  //==============================================================================
   // MIDI Controllers should discard incoming MIDI messages.
   // http://forum.pjrc.com/threads/24179-Teensy-3-Ableton-Analog-CC-causes-midi-crash
   while (usbMIDI.read()) {
