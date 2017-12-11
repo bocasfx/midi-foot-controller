@@ -17,6 +17,12 @@
 
    See https://www.pjrc.com/teensy/td_midi.html for the Teensy MIDI library documentation.
 
+   D0  - D9  : MIDI buttons.
+   D10 - D11 : MIDI bank buttons. Up/Down.
+   D12 - D18 : 7-seg display.
+   D19 - D21 : Mode switch.
+   A8        : Expression pedal.
+
 */
 
 #include <Bounce.h>
